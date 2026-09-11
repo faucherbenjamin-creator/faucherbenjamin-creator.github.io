@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bande numérique – jetons</title>
+<style>
+  :root{
+    --border:#8f96a3;
+    --panel:#f8fafc;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent:#7c3aed;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#fff;
+    color:var(--text);
+  }
+  .wrap{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:20px 24px 28px;
+  }
+  h1{
+    font-size:26px;
+    margin:0 0 18px;
+  }
+  .label{
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .scroll{
+    overflow-x:auto;
+    padding-bottom:8px;
+  }
+  .num-grid{
+    display:grid;
+    grid-template-columns:repeat(11,minmax(72px,1fr));
+    width:100%;
+    min-width:850px;
+  }
+  .num-cell{
+    height:68px;
+    border:2px solid var(--border);
+    border-right:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    font-weight:700;
+    background:var(--card);
+  }
+  .num-cell:last-of-type{border-right:2px solid var(--border)}
+  .drop-cell{
+    height:92px;
+    border:2px solid var(--border);
+    border-top:0;
+    border-right:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--panel);
+    position:relative;
+  }
+  .drop-cell:last-child{border-right:2px solid var(--border)}
+  .drop-cell.active{
+    outline:4px solid var(--accent);
+    outline-offset:-5px;
+  }
+  .ghost-token{width:48px;height:48px;border-radius:50%;border:3px dashed;opacity:.72;pointer-events:none}
+  .ghost-token.blue-ghost{border-color:#2563eb}
+  .ghost-token.green-ghost{border-color:#16a34a}
+  .drop-cell.locked{
+    background:#eef0f3;
+    cursor:not-allowed;
+  }
+  .cross{
+    font-size:58px;
+    line-height:1;
+    font-weight:700;
+    color:#4b5563;
+    user-select:none;
+  }
+  .help{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .bank-panel{
+    margin-top:22px;
+    border-top:2px solid #d1d5db;
+    padding-top:16px;
+  }
+  .bank-title{
+    font-weight:700;
+    font-size:18px;
+    margin-bottom:12px;
+  }
+  .banks-row{
+    display:flex;
+    gap:34px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .bank-group{
+    min-width:280px;
+  }
+  .bank-label{
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .bank{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:54px;
+  }
+  .token{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,.25);
+    box-shadow:inset 0 2px 4px rgba(255,255,255,.45),0 1px 3px rgba(0,0,0,.2);
+    cursor:grab;
+    touch-action:none;
+    flex:0 0 auto;
+  }
+  .token:active{cursor:grabbing}
+  .blue{background:#2563eb}
+  .green{background:#16a34a}
+  .stock-layout{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:28px;align-items:start}
+  .subtraction-area{display:flex;flex-direction:column;align-items:center}
+  .bag-label{font-weight:700;margin-bottom:8px;text-align:center}
+  .bag{width:155px;min-height:150px;padding:40px 12px 14px;position:relative;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-content:flex-start;background:#d6b07a;border:3px solid #7c5a32;border-radius:18px 18px 38px 38px}
+  .bag::before{content:"";position:absolute;top:15px;left:10px;right:10px;height:13px;border-top:4px solid #7c5a32;border-bottom:4px solid #7c5a32}
+  .bag.active{outline:4px solid var(--accent);outline-offset:4px}
+  .bag .token{width:34px;height:34px}
+  .bag-help{font-size:13px;color:var(--muted);text-align:center;margin-top:7px;max-width:175px}
+  .controls{margin-top:16px}
+  button#reset{
+    min-height:48px;
+    border:2px solid #9ca3af;
+    border-radius:10px;
+    background:#fff;
+    padding:0 22px;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  button#reset:hover{background:#f3f4f6}
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);
+    white-space:nowrap;border:0;
+  }
+  @media (max-width:900px){
+    .wrap{padding:16px}
+    .num-grid{min-width:760px}
+    .num-cell{height:60px;font-size:26px}
+    .drop-cell{height:82px}
+    .token{width:44px;height:44px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <h1>Bande numérique – jetons</h1>
+
+  <section>
+    <div class="label">Bande numérique</div>
+    <div class="scroll">
+      <div class="num-grid" aria-label="Bande numérique de zéro à dix">
+        <div class="num-cell">0</div><div class="num-cell">1</div><div class="num-cell">2</div><div class="num-cell">3</div><div class="num-cell">4</div><div class="num-cell">5</div><div class="num-cell">6</div><div class="num-cell">7</div><div class="num-cell">8</div><div class="num-cell">9</div><div class="num-cell">10</div>
+        <div class="drop-cell locked" data-cell="0" aria-label="Case zéro non utilisable"><span class="cross">×</span></div>
+        <div class="drop-cell" data-cell="1"></div><div class="drop-cell" data-cell="2"></div><div class="drop-cell" data-cell="3"></div><div class="drop-cell" data-cell="4"></div><div class="drop-cell" data-cell="5"></div><div class="drop-cell" data-cell="6"></div><div class="drop-cell" data-cell="7"></div><div class="drop-cell" data-cell="8"></div><div class="drop-cell" data-cell="9"></div><div class="drop-cell" data-cell="10"></div>
+      </div>
+    </div>
+    <div class="help">Glisse un jeton dans une case de 1 à 10. Tu peux aussi sélectionner un jeton puis cliquer sur une case.</div>
+  </section>
+
+  <section class="bank-panel">
+    <div class="stock-layout">
+      <div>
+        <div class="bank-title">Stock de jetons</div>
+        <div class="banks-row">
+          <div class="bank-group"><div class="bank-label">Bleus</div><div id="blue-bank" class="bank"></div></div>
+          <div class="bank-group"><div class="bank-label">Verts</div><div id="green-bank" class="bank"></div></div>
+        </div>
+        <div class="controls"><button id="reset" type="button">Tout remettre</button></div>
+      </div>
+      <div class="subtraction-area">
+        <div class="bag-label">Jetons enlevés</div>
+        <div id="bag" class="bag" aria-label="Sac pour les jetons enlevés"></div>
+        <div class="bag-help">Dépose ici les jetons retirés lors d’une soustraction.</div>
+      </div>
+    </div>
+    <div id="status" class="sr-only" aria-live="polite"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const blueBank = document.getElementById('blue-bank');
+  const greenBank = document.getElementById('green-bank');
+  const allCells = [...document.querySelectorAll('.drop-cell')];
+  const usableCells = allCells.filter(cell => cell.dataset.cell !== '0');
+  const lockedCell = document.querySelector('.drop-cell[data-cell="0"]');
+  const status = document.getElementById('status');
+  const bag = document.getElementById('bag');
+
+  let selected = null;
+  let dragged = null;
+
+  function announce(msg){
+    status.textContent = msg;
+  }
+
+  function makeToken(color, i){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'token ' + color;
+    b.dataset.color = color;
+    b.dataset.id = color + '-' + i;
+    b.setAttribute('aria-label', 'Jeton ' + (color === 'blue' ? 'bleu' : 'vert'));
+    b.draggable = true;
+
+    b.addEventListener('click', () => {
+      selected = b;
+      document.querySelectorAll('.token').forEach(t => t.style.outline = '');
+      b.style.outline = '4px solid var(--accent)';
+      announce('Jeton sélectionné. Clique sur une case de 1 à 10.');
+    });
+
+    b.addEventListener('dragstart', e => {
+      dragged = b;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    b.addEventListener('dragend', () => {
+      dragged = null;
+      usableCells.forEach(c => c.classList.remove('active'));
+    });
+
+    return b;
+  }
+
+  function resetBoardOnly(){
+    usableCells.forEach(cell => {
+      cell.innerHTML = '';
+      cell.classList.remove('active');
+    });
+    lockedCell.innerHTML = '<span class="cross">×</span>';
+  }
+
+  function rebuildStock(){
+    resetBoardOnly();
+    blueBank.innerHTML = '';
+    greenBank.innerHTML = '';
+    bag.innerHTML = '';
+
+    for(let i = 0; i < 10; i++){
+      blueBank.appendChild(makeToken('blue', i));
+      greenBank.appendChild(makeToken('green', i));
+    }
+
+    selected = null;
+    dragged = null;
+  }
+
+  function returnTokenToStock(token){
+    if(!token) return;
+    const bank = token.dataset.color === 'blue' ? blueBank : greenBank;
+    token.style.outline = '';
+    bank.appendChild(token);
+  }
+
+  function place(token, cell){
+    if(!token || !cell || cell.dataset.cell === '0') return;
+
+    const occupied = cell.querySelector('.token');
+    cell.querySelectorAll('.ghost-token').forEach(g => g.remove());
+    if(occupied && occupied !== token){
+      returnTokenToStock(occupied);
+    }
+
+    token.style.outline = '';
+    cell.appendChild(token);
+    selected = null;
+    announce('Jeton placé dans la case ' + cell.dataset.cell + '.');
+  }
+
+  usableCells.forEach(cell => {
+    cell.addEventListener('dragover', e => {
+      e.preventDefault();
+      cell.classList.add('active');
+    });
+
+    cell.addEventListener('dragleave', () => {
+      cell.classList.remove('active');
+    });
+
+    cell.addEventListener('drop', e => {
+      e.preventDefault();
+      cell.classList.remove('active');
+      place(dragged, cell);
+      dragged = null;
+    });
+
+    cell.addEventListener('click', () => {
+      if(selected) place(selected, cell);
+    });
+  });
+
+  lockedCell.addEventListener('dragover', e => {
+    e.preventDefault();
+  });
+  lockedCell.addEventListener('drop', e => {
+    e.preventDefault();
+    announce('La case zéro ne peut pas recevoir de jeton.');
+  });
+  lockedCell.addEventListener('click', () => {
+    announce('La case zéro ne peut pas recevoir de jeton.');
+  });
+
+  bag.addEventListener('dragover', e => { e.preventDefault(); bag.classList.add('active'); });
+  bag.addEventListener('dragleave', () => bag.classList.remove('active'));
+  function leaveGhost(token){
+    const cell=token ? token.parentElement : null;
+    if(!cell || !cell.classList.contains('drop-cell') || cell.dataset.cell==='0') return;
+    cell.querySelectorAll('.ghost-token').forEach(g=>g.remove());
+    const ghost=document.createElement('div');
+    ghost.className='ghost-token '+(token.dataset.color==='blue'?'blue-ghost':'green-ghost');
+    ghost.setAttribute('aria-label','Trace du jeton retiré');
+    cell.appendChild(ghost);
+  }
+  bag.addEventListener('drop', e => {
+    e.preventDefault(); bag.classList.remove('active');
+    if(!dragged) return;
+    leaveGhost(dragged);
+    dragged.style.outline=''; bag.appendChild(dragged);
+    dragged=null; selected=null; announce('Jeton retiré : sa place reste indiquée en pointillés.');
+  });
+  bag.addEventListener('click', () => {
+    if(!selected) return;
+    leaveGhost(selected);
+    selected.style.outline=''; bag.appendChild(selected);
+    selected=null; announce('Jeton retiré : sa place reste indiquée en pointillés.');
+  });
+
+  [blueBank, greenBank].forEach(bank => {
+    bank.addEventListener('dragover', e => e.preventDefault());
+    bank.addEventListener('drop', e => {
+      e.preventDefault();
+      if(!dragged) return;
+      returnTokenToStock(dragged);
+      dragged = null;
+    });
+  });
+
+  document.getElementById('reset').addEventListener('click', () => {
+    rebuildStock();
+    announce('La frise est vide et les vingt jetons sont revenus dans le stock.');
+  });
+
+  rebuildStock();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maisons des nombres - CP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f7f7f4;color:#181818;user-select:none}
+.app{min-height:100vh;padding:12px;display:flex;flex-direction:column;gap:12px}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.title{font-size:clamp(25px,3vw,40px);font-weight:700}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,button{font:inherit;font-size:19px;padding:9px 13px;background:white;border:2px solid #444;border-radius:10px;cursor:pointer}
+.workspace{flex:1;display:grid;grid-template-columns:minmax(190px,24%) 1fr;gap:18px;min-height:0}
+.reserve-panel{background:white;border:2px solid #aaa;border-radius:14px;padding:12px;display:flex;flex-direction:column}
+.reserve-title{text-align:center;font-size:clamp(20px,2vw,28px);font-weight:700;margin-bottom:10px}
+.reserve{flex:1;min-height:180px;border:2px dashed #aaa;border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:11px}
+.main{display:flex;flex-direction:column;align-items:center;gap:10px;min-height:0}
+.house{width:min(940px,97%);flex:1;min-height:540px;display:flex;flex-direction:column;align-items:stretch}
+.roof{height:105px;background:#c90000;clip-path:polygon(50% 0,100% 100%,0 100%);position:relative}
+.roof-number{position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-end;padding-bottom:9px;color:white;font-size:clamp(48px,6vw,72px);font-weight:500}
+.house-body{flex:1;background:white;border:3px solid #9f918d;border-top:none;padding:18px 24px 15px;display:flex;flex-direction:column;gap:14px}
+.manip-title{text-align:center;font-weight:700;font-size:clamp(20px,2.2vw,30px)}
+.manip{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center}
+.room{min-height:145px;border:3px dashed #b8aaa5;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:10px;position:relative}
+.room-hint{position:absolute;color:#c5bbb7;font-size:21px;pointer-events:none}
+.room.has-token .room-hint{display:none}
+.plus{font-size:clamp(40px,5vw,62px);font-weight:700}
+.equation{text-align:center;font-size:clamp(36px,5vw,62px);font-weight:700;min-height:70px}
+.sep{border-top:2px solid #ddd}
+.progress{text-align:center;font-size:clamp(18px,2vw,25px);font-weight:700}
+.discoveries{flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;min-height:150px}
+.discovery-row{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;font-size:clamp(25px,3.1vw,40px)}
+.expr-left{text-align:right}.expr-right{text-align:left}
+.arrow{font-size:clamp(30px,4vw,48px);padding:0 5px}
+.discovery-single{text-align:center;font-size:clamp(25px,3.1vw,40px)}
+.blank{color:#a79a95;letter-spacing:1px}
+.found{color:#111;font-weight:500}
+.token{width:clamp(50px,5.4vw,70px);height:clamp(50px,5.4vw,70px);border-radius:50%;border:3px solid #1f4f8a;background:#4f86c6;cursor:grab;touch-action:none;box-shadow:0 2px 0 rgba(0,0,0,.14)}
+.token:active{cursor:grabbing}
+.footer-note{text-align:center;color:#666;font-size:15px}
+@media(max-width:800px){.workspace{grid-template-columns:1fr}.reserve-panel{min-height:180px}.house{min-height:610px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="title">Les maisons des nombres</div>
+    <div class="controls">
+      <strong>Maison du</strong>
+      <select id="target"></select>
+      <button id="swapBtn">↔ Inverser</button>
+      <button id="resetBtn">Tout remettre</button>
+      <button id="clearBtn">Effacer les trouvailles</button>
+      <button id="fullscreenBtn">Plein écran</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <section class="reserve-panel">
+      <div class="reserve-title">Réserve de jetons</div>
+      <div id="reserve" class="reserve dropzone" data-zone="reserve"></div>
+    </section>
+
+    <main class="main">
+      <section class="house">
+        <div class="roof"><div id="roofNumber" class="roof-number">2</div></div>
+        <div class="house-body">
+          <div class="manip-title">Je décompose le nombre</div>
+          <div class="manip">
+            <div id="leftRoom" class="room dropzone" data-zone="left"><div class="room-hint">Déposer les jetons</div></div>
+            <div class="plus">+</div>
+            <div id="rightRoom" class="room dropzone" data-zone="right"><div class="room-hint">Déposer les jetons</div></div>
+          </div>
+
+          <div id="equation" class="equation">0 + 0 = 0</div>
+          <div class="sep"></div>
+          <div id="progress" class="progress"></div>
+          <div id="discoveries" class="discoveries"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="footer-note">Une opération n’apparaît que lorsqu’elle a été réellement construite avec les jetons.</div>
+</div>
+
+<script>
+const targetSelect=document.getElementById('target');
+const reserve=document.getElementById('reserve');
+const leftRoom=document.getElementById('leftRoom');
+const rightRoom=document.getElementById('rightRoom');
+const roofNumber=document.getElementById('roofNumber');
+const equation=document.getElementById('equation');
+const discoveriesEl=document.getElementById('discoveries');
+const progressEl=document.getElementById('progress');
+
+for(let n=2;n<=10;n++){
+  const opt=document.createElement('option');
+  opt.value=n; opt.textContent=n;
+  targetSelect.appendChild(opt);
+}
+
+let target=2;
+let foundOperations=new Set();
+
+function opKey(a,b){ return `${a}+${b}`; }
+
+function makeToken(i){
+  const t=document.createElement('div');
+  t.className='token';
+  t.draggable=true;
+  t.dataset.id=i;
+  t.addEventListener('dragstart',e=>{
+    e.dataTransfer.setData('text/plain',t.dataset.id);
+    setTimeout(()=>t.style.opacity='.35',0);
+  });
+  t.addEventListener('dragend',()=>t.style.opacity='1');
+  return t;
+}
+
+function count(zone){ return zone.querySelectorAll('.token').length; }
+
+function build(n){
+  target=n;
+  foundOperations=new Set();
+  roofNumber.textContent=n;
+  reserve.innerHTML='';
+  leftRoom.querySelectorAll('.token').forEach(t=>t.remove());
+  rightRoom.querySelectorAll('.token').forEach(t=>t.remove());
+
+  for(let i=0;i<n;i++) reserve.appendChild(makeToken(i));
+
+  renderDiscoveries();
+  update(false);
+}
+
+function blankExpr(){
+  return `<span class="blank">···· + ···· = ${target}</span>`;
+}
+function filledExpr(a,b){
+  return `<span class="found">${a} + ${b} = ${target}</span>`;
+}
+
+function renderDiscoveries(){
+  discoveriesEl.innerHTML='';
+  const total=target+1;
+  progressEl.textContent=`${foundOperations.size} / ${total} opérations trouvées`;
+
+  for(let a=0; a<target-a; a++){
+    const b=target-a;
+    const row=document.createElement('div');
+    row.className='discovery-row';
+
+    const left=document.createElement('div');
+    left.className='expr-left';
+    left.innerHTML=foundOperations.has(opKey(a,b)) ? filledExpr(a,b) : blankExpr();
+
+    const arrow=document.createElement('div');
+    arrow.className='arrow';
+    arrow.textContent='↔';
+
+    const right=document.createElement('div');
+    right.className='expr-right';
+    right.innerHTML=foundOperations.has(opKey(b,a)) ? filledExpr(b,a) : blankExpr();
+
+    row.append(left,arrow,right);
+    discoveriesEl.appendChild(row);
+  }
+
+  if(target % 2 === 0){
+    const a=target/2;
+    const row=document.createElement('div');
+    row.className='discovery-single';
+    row.innerHTML=foundOperations.has(opKey(a,a)) ? filledExpr(a,a) : blankExpr();
+    discoveriesEl.appendChild(row);
+  }
+}
+
+function recordCurrentIfComplete(){
+  const l=count(leftRoom), r=count(rightRoom);
+  if(l+r===target){
+    foundOperations.add(opKey(l,r));
+    renderDiscoveries();
+  }
+}
+
+function update(record=true){
+  const l=count(leftRoom), r=count(rightRoom);
+  leftRoom.classList.toggle('has-token',l>0);
+  rightRoom.classList.toggle('has-token',r>0);
+  equation.textContent=`${l} + ${r} = ${l+r}`;
+  if(record) recordCurrentIfComplete();
+}
+
+document.querySelectorAll('.dropzone').forEach(zone=>{
+  zone.addEventListener('dragover',e=>e.preventDefault());
+  zone.addEventListener('drop',e=>{
+    e.preventDefault();
+    const id=e.dataTransfer.getData('text/plain');
+    const token=document.querySelector(`.token[data-id="${id}"]`);
+    if(token) zone.appendChild(token);
+    update(true);
+  });
+});
+
+targetSelect.addEventListener('change',()=>build(parseInt(targetSelect.value,10)));
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  [...leftRoom.querySelectorAll('.token'),...rightRoom.querySelectorAll('.token')].forEach(t=>reserve.appendChild(t));
+  update(false);
+});
+
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  foundOperations=new Set();
+  renderDiscoveries();
+});
+
+document.getElementById('swapBtn').addEventListener('click',()=>{
+  const left=[...leftRoom.querySelectorAll('.token')];
+  const right=[...rightRoom.querySelectorAll('.token')];
+  left.forEach(t=>rightRoom.appendChild(t));
+  right.forEach(t=>leftRoom.appendChild(t));
+  update(true);
+});
+
+document.getElementById('fullscreenBtn').addEventListener('click',async()=>{
+  try{
+    if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  }catch(e){}
+});
+
+build(2);
+</script>
+</body>
+</html>
