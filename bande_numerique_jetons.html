@@ -20,7 +20,7 @@ Voir le fichier LICENSE du dépôt pour le texte complet de la licence.
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Frise numérique manipulable</title>
+<title>Bande numérique – jetons</title>
 
 <style>
 
@@ -1030,8 +1030,8 @@ function autoFill(n){
         );
 
 
-    buildBoard();
-
+    // On conserve la frise actuelle : on remet simplement tous les jetons
+    // dans le stock avant de remplir jusqu’au nombre choisi.
     buildStock();
 
 
@@ -1245,6 +1245,10 @@ board.addEventListener(
             e.target.closest(".token")
             ||
             e.target.closest(".number")
+            ||
+            e.target.closest(".ghost")
+            ||
+            e.target.closest(".cross")
         ){
 
             return;
