@@ -3,382 +3,1757 @@ Copyright (C) 2026 Benjamin Faucher
 
 Ce programme est un logiciel libre : vous pouvez le redistribuer
 et/ou le modifier selon les termes de la GNU General Public License
-version 3 ou toute version ultérieure.
+telle que publiée par la Free Software Foundation, soit la version 3
+de la Licence, soit (à votre choix) toute version ultérieure.
 
-Voir le fichier LICENSE du dépôt.
---><!doctype html>
+Ce programme est distribué dans l'espoir qu'il sera utile,
+mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de
+QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER.
+
+Voir le fichier LICENSE du dépôt pour le texte complet de la licence.
+-->
+
+<!DOCTYPE html>
 <html lang="fr">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bande numérique – jetons</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Frise numérique manipulable</title>
+
 <style>
-  :root{
-    --border:#8f96a3;
-    --panel:#f8fafc;
-    --card:#ffffff;
-    --text:#111827;
-    --muted:#6b7280;
-    --accent:#7c3aed;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:Arial,Helvetica,sans-serif;
-    background:#fff;
-    color:var(--text);
-  }
-  .wrap{
-    width:100%;
-    max-width:none;
-    margin:0;
-    padding:20px 24px 28px;
-  }
-  h1{
-    font-size:26px;
-    margin:0 0 18px;
-  }
-  .label{
-    font-weight:700;
-    margin-bottom:8px;
-  }
-  .scroll{
-    overflow-x:auto;
-    padding-bottom:8px;
-  }
-  .num-grid{
-    display:grid;
-    grid-template-columns:repeat(11,minmax(72px,1fr));
-    width:100%;
-    min-width:850px;
-  }
-  .num-cell{
-    height:68px;
-    border:2px solid var(--border);
-    border-right:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:30px;
-    font-weight:700;
-    background:var(--card);
-  }
-  .num-cell:last-of-type{border-right:2px solid var(--border)}
-  .drop-cell{
-    height:92px;
-    border:2px solid var(--border);
-    border-top:0;
-    border-right:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--panel);
-    position:relative;
-  }
-  .drop-cell:last-child{border-right:2px solid var(--border)}
-  .drop-cell.active{
-    outline:4px solid var(--accent);
-    outline-offset:-5px;
-  }
-  .ghost-token{width:48px;height:48px;border-radius:50%;border:3px dashed;opacity:.72;pointer-events:none}
-  .ghost-token.blue-ghost{border-color:#2563eb}
-  .ghost-token.green-ghost{border-color:#16a34a}
-  .drop-cell.locked{
-    background:#eef0f3;
-    cursor:not-allowed;
-  }
-  .cross{
-    font-size:58px;
-    line-height:1;
-    font-weight:700;
-    color:#4b5563;
-    user-select:none;
-  }
-  .help{
-    margin-top:8px;
-    color:var(--muted);
-    font-size:14px;
-  }
-  .bank-panel{
-    margin-top:22px;
-    border-top:2px solid #d1d5db;
-    padding-top:16px;
-  }
-  .bank-title{
-    font-weight:700;
-    font-size:18px;
-    margin-bottom:12px;
-  }
-  .banks-row{
-    display:flex;
-    gap:34px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-  }
-  .bank-group{
-    min-width:280px;
-  }
-  .bank-label{
-    font-weight:700;
-    margin-bottom:8px;
-  }
-  .bank{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    min-height:54px;
-  }
-  .token{
-    width:48px;
-    height:48px;
-    border-radius:50%;
-    border:2px solid rgba(0,0,0,.25);
-    box-shadow:inset 0 2px 4px rgba(255,255,255,.45),0 1px 3px rgba(0,0,0,.2);
-    cursor:grab;
-    touch-action:none;
-    flex:0 0 auto;
-  }
-  .token:active{cursor:grabbing}
-  .blue{background:#2563eb}
-  .green{background:#16a34a}
-  .stock-layout{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:28px;align-items:start}
-  .subtraction-area{display:flex;flex-direction:column;align-items:center}
-  .bag-label{font-weight:700;margin-bottom:8px;text-align:center}
-  .bag{width:155px;min-height:150px;padding:40px 12px 14px;position:relative;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-content:flex-start;background:#d6b07a;border:3px solid #7c5a32;border-radius:18px 18px 38px 38px}
-  .bag::before{content:"";position:absolute;top:15px;left:10px;right:10px;height:13px;border-top:4px solid #7c5a32;border-bottom:4px solid #7c5a32}
-  .bag.active{outline:4px solid var(--accent);outline-offset:4px}
-  .bag .token{width:34px;height:34px}
-  .bag-help{font-size:13px;color:var(--muted);text-align:center;margin-top:7px;max-width:175px}
-  .controls{margin-top:16px}
-  button#reset{
-    min-height:48px;
-    border:2px solid #9ca3af;
-    border-radius:10px;
-    background:#fff;
-    padding:0 22px;
-    font-size:17px;
-    font-weight:700;
-    cursor:pointer;
-  }
-  button#reset:hover{background:#f3f4f6}
-  .sr-only{
-    position:absolute;
-    width:1px;height:1px;
-    padding:0;margin:-1px;
-    overflow:hidden;clip:rect(0,0,0,0);
-    white-space:nowrap;border:0;
-  }
-  @media (max-width:900px){
-    .wrap{padding:16px}
-    .num-grid{min-width:760px}
-    .num-cell{height:60px;font-size:26px}
-    .drop-cell{height:82px}
-    .token{width:44px;height:44px}
-  }
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 18px;
+    font-family: Arial, sans-serif;
+    color: #1f2937;
+    background: #ffffff;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+h1 {
+    font-size: 25px;
+    margin: 0 auto 0 0;
+}
+
+label {
+    font-weight: bold;
+}
+
+select,
+button {
+    font: inherit;
+}
+
+select {
+    padding: 8px 12px;
+    border: 2px solid #9ca3af;
+    border-radius: 8px;
+    background: white;
+    font-size: 17px;
+}
+
+.fillHint {
+    font-size: 15px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+}
+
+
+/* =========================
+   FRISE
+========================= */
+
+#boardWrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+#board {
+    width: 100%;
+    min-width: 770px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    user-select: none;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+}
+
+.number,
+.slot {
+    border: 2px solid #8f96a3;
+    border-right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.number:last-child,
+.slot:last-child {
+    border-right: 2px solid #8f96a3;
+}
+
+.number {
+    height: 48px;
+    font-size: 23px;
+    font-weight: bold;
+    background: white;
+    cursor: pointer;
+    user-select: none;
+}
+
+.number.ten {
+    background: #f3a23a;
+    color: #382307;
+}
+
+.slot {
+    height: 66px;
+    border-top: 0;
+    background: #f8fafc;
+    position: relative;
+}
+
+.slot.ten {
+    background: #fff1d6;
+}
+
+.slot.zero {
+    background: #eceff3;
+}
+
+.cross {
+    font-size: 44px;
+    font-weight: bold;
+    color: #4b5563;
+}
+
+.slot.over {
+    outline: 4px solid #7c3aed;
+    outline-offset: -5px;
+}
+
+
+/* =========================
+   JETONS
+========================= */
+
+.token {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,.25);
+    cursor: grab;
+    box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.5),
+        0 1px 3px rgba(0,0,0,.2);
+    flex: none;
+}
+
+.token.blue {
+    background: #2563eb;
+}
+
+.token.green {
+    background: #16a34a;
+}
+
+.token.multi-selected {
+    outline: 4px solid #7c3aed;
+    outline-offset: 2px;
+}
+
+
+/* =========================
+   TRACE DES JETONS RETIRÉS
+========================= */
+
+.ghost {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 3px dashed;
+    opacity: .75;
+}
+
+.ghost.blue {
+    border-color: #2563eb;
+}
+
+.ghost.green {
+    border-color: #16a34a;
+}
+
+
+/* =========================
+   RECTANGLE DE SÉLECTION
+========================= */
+
+#selectionBox {
+    position: absolute;
+    border: 2px dashed #7c3aed;
+    background: rgba(124,58,237,.10);
+    pointer-events: none;
+    display: none;
+    z-index: 20;
+}
+
+
+/* =========================
+   CONSIGNES
+========================= */
+
+.instructions {
+    font-size: 14px;
+    color: #667085;
+    margin-top: 8px;
+}
+
+.selectionControls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+#removeSelected {
+    padding: 9px 15px;
+    border: 2px solid #7c3aed;
+    border-radius: 9px;
+    background: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#removeSelected:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+#selectionCount {
+    font-size: 14px;
+    color: #667085;
+}
+
+
+/* =========================
+   PARTIE BASSE
+========================= */
+
+.bottom {
+    display: grid;
+    grid-template-columns: 1fr 190px;
+    gap: 28px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px solid #d1d5db;
+}
+
+.stockTitle,
+.bagTitle {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.banks {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.bankBox {
+    min-width: 280px;
+}
+
+.bankLabel {
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.bank {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 48px;
+}
+
+#reset {
+    margin-top: 16px;
+    padding: 10px 20px;
+    border: 2px solid #9ca3af;
+    border-radius: 9px;
+    background: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+/* =========================
+   SAC
+========================= */
+
+.bagArea {
+    text-align: center;
+}
+
+#bag {
+    width: 155px;
+    min-height: 145px;
+    margin: auto;
+    padding: 39px 10px 12px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    position: relative;
+    background: #d6b07a;
+    border: 3px solid #7c5a32;
+    border-radius: 18px 18px 38px 38px;
+}
+
+#bag::before {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: 10px;
+    right: 10px;
+    height: 12px;
+    border-top: 4px solid #7c5a32;
+    border-bottom: 4px solid #7c5a32;
+}
+
+#bag.over {
+    outline: 4px solid #7c3aed;
+    outline-offset: 4px;
+}
+
+#bag .token {
+    width: 31px;
+    height: 31px;
+}
+
+.bagHelp {
+    font-size: 13px;
+    color: #667085;
+    margin-top: 7px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 750px) {
+
+    body {
+        padding: 12px;
+    }
+
+    .bottom {
+        grid-template-columns: 1fr;
+    }
+
+    .bagArea {
+        text-align: left;
+    }
+
+    #bag {
+        margin: 0;
+    }
+}
+
 </style>
 </head>
+
+
 <body>
-<div class="wrap" id="app">
-  <h1>Bande numérique – jetons</h1>
 
-  <section>
-    <div class="label">Bande numérique</div>
-    <div class="scroll">
-      <div class="num-grid" aria-label="Bande numérique de zéro à dix">
-        <div class="num-cell">0</div><div class="num-cell">1</div><div class="num-cell">2</div><div class="num-cell">3</div><div class="num-cell">4</div><div class="num-cell">5</div><div class="num-cell">6</div><div class="num-cell">7</div><div class="num-cell">8</div><div class="num-cell">9</div><div class="num-cell">10</div>
-        <div class="drop-cell locked" data-cell="0" aria-label="Case zéro non utilisable"><span class="cross">×</span></div>
-        <div class="drop-cell" data-cell="1"></div><div class="drop-cell" data-cell="2"></div><div class="drop-cell" data-cell="3"></div><div class="drop-cell" data-cell="4"></div><div class="drop-cell" data-cell="5"></div><div class="drop-cell" data-cell="6"></div><div class="drop-cell" data-cell="7"></div><div class="drop-cell" data-cell="8"></div><div class="drop-cell" data-cell="9"></div><div class="drop-cell" data-cell="10"></div>
-      </div>
-    </div>
-    <div class="help">Glisse un jeton dans une case de 1 à 10. Tu peux aussi sélectionner un jeton puis cliquer sur une case.</div>
-  </section>
 
-  <section class="bank-panel">
-    <div class="stock-layout">
-      <div>
-        <div class="bank-title">Stock de jetons</div>
-        <div class="banks-row">
-          <div class="bank-group"><div class="bank-label">Bleus</div><div id="blue-bank" class="bank"></div></div>
-          <div class="bank-group"><div class="bank-label">Verts</div><div id="green-bank" class="bank"></div></div>
-        </div>
-        <div class="controls"><button id="reset" type="button">Tout remettre</button></div>
-      </div>
-      <div class="subtraction-area">
-        <div class="bag-label">Jetons enlevés</div>
-        <div id="bag" class="bag" aria-label="Sac pour les jetons enlevés"></div>
-        <div class="bag-help">Dépose ici les jetons retirés lors d’une soustraction.</div>
-      </div>
-    </div>
-    <div id="status" class="sr-only" aria-live="polite"></div>
-  </section>
+<header>
+
+    <h1>Frise numérique – jetons</h1>
+
+    <label for="range">
+        Dimension :
+    </label>
+
+    <select id="range">
+        <option value="10">0 à 10</option>
+        <option value="20">0 à 20</option>
+        <option value="30">0 à 30</option>
+        <option value="40">0 à 40</option>
+        <option value="50">0 à 50</option>
+        <option value="60">0 à 60</option>
+        <option value="70">0 à 70</option>
+        <option value="80">0 à 80</option>
+        <option value="90">0 à 90</option>
+        <option value="100">0 à 100</option>
+    </select>
+
+    <span class="fillHint">
+        Double-clic sur un nombre pour remplir
+    </span>
+
+</header>
+
+
+<div id="boardWrap">
+    <div id="board"></div>
 </div>
 
+
+<div class="instructions">
+
+    Glisse les jetons sur la frise ou
+    <strong>double-clique sur un nombre pour remplir automatiquement</strong>.
+
+    Pour retirer plusieurs jetons,
+    maintiens le clic dans la frise et trace un rectangle autour d’eux.
+
+</div>
+
+
+<div class="selectionControls">
+
+    <button id="removeSelected"
+            type="button"
+            disabled>
+        Mettre la sélection dans le sac
+    </button>
+
+    <span id="selectionCount">
+        Aucun jeton sélectionné
+    </span>
+
+</div>
+
+
+<div class="bottom">
+
+<section>
+
+    <div class="stockTitle">
+        Stock de jetons
+    </div>
+
+    <div class="banks">
+
+        <div class="bankBox">
+
+            <div class="bankLabel">
+                Bleus
+            </div>
+
+            <div id="blueBank"
+                 class="bank">
+            </div>
+
+        </div>
+
+
+        <div class="bankBox">
+
+            <div class="bankLabel">
+                Verts
+            </div>
+
+            <div id="greenBank"
+                 class="bank">
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <button id="reset"
+            type="button">
+        Tout remettre
+    </button>
+
+</section>
+
+
+<section class="bagArea">
+
+    <div class="bagTitle">
+        Jetons enlevés
+    </div>
+
+    <div id="bag"></div>
+
+    <div class="bagHelp">
+        Les jetons retirés restent visibles ici.
+    </div>
+
+</section>
+
+</div>
+
+
 <script>
+
 (() => {
-  const blueBank = document.getElementById('blue-bank');
-  const greenBank = document.getElementById('green-bank');
-  const allCells = [...document.querySelectorAll('.drop-cell')];
-  const usableCells = allCells.filter(cell => cell.dataset.cell !== '0');
-  const lockedCell = document.querySelector('.drop-cell[data-cell="0"]');
-  const status = document.getElementById('status');
-  const bag = document.getElementById('bag');
 
-  let selected = null;
-  let dragged = null;
+const board =
+    document.getElementById("board");
 
-  function announce(msg){
-    status.textContent = msg;
-  }
+const range =
+    document.getElementById("range");
 
-  function makeToken(color, i){
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'token ' + color;
-    b.dataset.color = color;
-    b.dataset.id = color + '-' + i;
-    b.setAttribute('aria-label', 'Jeton ' + (color === 'blue' ? 'bleu' : 'vert'));
-    b.draggable = true;
+const blueBank =
+    document.getElementById("blueBank");
 
-    b.addEventListener('click', () => {
-      selected = b;
-      document.querySelectorAll('.token').forEach(t => t.style.outline = '');
-      b.style.outline = '4px solid var(--accent)';
-      announce('Jeton sélectionné. Clique sur une case de 1 à 10.');
-    });
+const greenBank =
+    document.getElementById("greenBank");
 
-    b.addEventListener('dragstart', e => {
-      dragged = b;
-      e.dataTransfer.effectAllowed = 'move';
-    });
+const bag =
+    document.getElementById("bag");
 
-    b.addEventListener('dragend', () => {
-      dragged = null;
-      usableCells.forEach(c => c.classList.remove('active'));
-    });
+const removeSelected =
+    document.getElementById("removeSelected");
 
-    return b;
-  }
+const selectionCount =
+    document.getElementById("selectionCount");
 
-  function resetBoardOnly(){
-    usableCells.forEach(cell => {
-      cell.innerHTML = '';
-      cell.classList.remove('active');
-    });
-    lockedCell.innerHTML = '<span class="cross">×</span>';
-  }
 
-  function rebuildStock(){
-    resetBoardOnly();
-    blueBank.innerHTML = '';
-    greenBank.innerHTML = '';
-    bag.innerHTML = '';
+let max = 10;
 
-    for(let i = 0; i < 10; i++){
-      blueBank.appendChild(makeToken('blue', i));
-      greenBank.appendChild(makeToken('green', i));
+let dragged = null;
+
+let selected = null;
+
+let multiSelected = new Set();
+
+let selecting = false;
+
+let selStartX = 0;
+
+let selStartY = 0;
+
+
+/* =========================
+   CRÉATION D'UN JETON
+========================= */
+
+function token(color,id){
+
+    const t =
+        document.createElement("button");
+
+    t.type = "button";
+
+    t.className =
+        "token " + color;
+
+    t.draggable = true;
+
+    t.dataset.color = color;
+
+    t.dataset.id = id;
+
+    t.setAttribute(
+        "aria-label",
+        color === "blue"
+            ? "Jeton bleu"
+            : "Jeton vert"
+    );
+
+
+    t.addEventListener(
+        "dragstart",
+        e => {
+
+            dragged = t;
+
+            e.dataTransfer.effectAllowed =
+                "move";
+
+            e.dataTransfer.setData(
+                "text/plain",
+                id
+            );
+
+        }
+    );
+
+
+    t.addEventListener(
+        "dragend",
+        () => {
+
+            dragged = null;
+
+            document
+            .querySelectorAll(".over")
+            .forEach(
+                x =>
+                x.classList.remove("over")
+            );
+
+        }
+    );
+
+
+    t.addEventListener(
+        "click",
+        e => {
+
+            e.stopPropagation();
+
+            document
+            .querySelectorAll(".token")
+            .forEach(
+                x =>
+                x.style.outline = ""
+            );
+
+            selected = t;
+
+            t.style.outline =
+                "4px solid #7c3aed";
+
+        }
+    );
+
+
+    return t;
+
+}
+
+
+/* =========================
+   CONSTRUCTION DU STOCK
+========================= */
+
+function buildStock(){
+
+    blueBank.innerHTML = "";
+
+    greenBank.innerHTML = "";
+
+    bag.innerHTML = "";
+
+
+    for(let i = 1; i <= 50; i++){
+
+        blueBank.appendChild(
+            token(
+                "blue",
+                "b" + i
+            )
+        );
+
+        greenBank.appendChild(
+            token(
+                "green",
+                "g" + i
+            )
+        );
+
     }
 
+
     selected = null;
+
     dragged = null;
-  }
 
-  function returnTokenToStock(token){
-    if(!token) return;
-    const bank = token.dataset.color === 'blue' ? blueBank : greenBank;
-    token.style.outline = '';
-    bank.appendChild(token);
-  }
+}
 
-  function place(token, cell){
-    if(!token || !cell || cell.dataset.cell === '0') return;
 
-    const occupied = cell.querySelector('.token');
-    cell.querySelectorAll('.ghost-token').forEach(g => g.remove());
-    if(occupied && occupied !== token){
-      returnTokenToStock(occupied);
+/* =========================
+   RETOUR DANS LE STOCK
+========================= */
+
+function returnStock(t){
+
+    if(!t) return;
+
+    t.style.outline = "";
+
+    t.classList.remove(
+        "multi-selected"
+    );
+
+
+    if(
+        t.dataset.color === "blue"
+    ){
+
+        blueBank.appendChild(t);
+
     }
 
-    token.style.outline = '';
-    cell.appendChild(token);
+    else{
+
+        greenBank.appendChild(t);
+
+    }
+
+}
+
+
+/* =========================
+   PLACER UN JETON
+========================= */
+
+function place(t,c){
+
+    if(
+        !t ||
+        !c ||
+        c.dataset.n === "0"
+    ){
+        return;
+    }
+
+
+    const old =
+        c.querySelector(".token");
+
+
+    if(
+        old &&
+        old !== t
+    ){
+
+        returnStock(old);
+
+    }
+
+
+    c.querySelectorAll(".ghost")
+    .forEach(
+        g => g.remove()
+    );
+
+
+    t.style.outline = "";
+
+    t.classList.remove(
+        "multi-selected"
+    );
+
+    c.appendChild(t);
+
     selected = null;
-    announce('Jeton placé dans la case ' + cell.dataset.cell + '.');
-  }
 
-  usableCells.forEach(cell => {
-    cell.addEventListener('dragover', e => {
-      e.preventDefault();
-      cell.classList.add('active');
-    });
+}
 
-    cell.addEventListener('dragleave', () => {
-      cell.classList.remove('active');
-    });
 
-    cell.addEventListener('drop', e => {
-      e.preventDefault();
-      cell.classList.remove('active');
-      place(dragged, cell);
-      dragged = null;
-    });
+/* =========================
+   ÉVÉNEMENTS DES CASES
+========================= */
 
-    cell.addEventListener('click', () => {
-      if(selected) place(selected, cell);
-    });
-  });
+function addSlotEvents(c){
 
-  lockedCell.addEventListener('dragover', e => {
-    e.preventDefault();
-  });
-  lockedCell.addEventListener('drop', e => {
-    e.preventDefault();
-    announce('La case zéro ne peut pas recevoir de jeton.');
-  });
-  lockedCell.addEventListener('click', () => {
-    announce('La case zéro ne peut pas recevoir de jeton.');
-  });
+    c.addEventListener(
+        "dragover",
+        e => {
 
-  bag.addEventListener('dragover', e => { e.preventDefault(); bag.classList.add('active'); });
-  bag.addEventListener('dragleave', () => bag.classList.remove('active'));
-  function leaveGhost(token){
-    const cell=token ? token.parentElement : null;
-    if(!cell || !cell.classList.contains('drop-cell') || cell.dataset.cell==='0') return;
-    cell.querySelectorAll('.ghost-token').forEach(g=>g.remove());
-    const ghost=document.createElement('div');
-    ghost.className='ghost-token '+(token.dataset.color==='blue'?'blue-ghost':'green-ghost');
-    ghost.setAttribute('aria-label','Trace du jeton retiré');
-    cell.appendChild(ghost);
-  }
-  bag.addEventListener('drop', e => {
-    e.preventDefault(); bag.classList.remove('active');
-    if(!dragged) return;
-    leaveGhost(dragged);
-    dragged.style.outline=''; bag.appendChild(dragged);
-    dragged=null; selected=null; announce('Jeton retiré : sa place reste indiquée en pointillés.');
-  });
-  bag.addEventListener('click', () => {
-    if(!selected) return;
-    leaveGhost(selected);
-    selected.style.outline=''; bag.appendChild(selected);
-    selected=null; announce('Jeton retiré : sa place reste indiquée en pointillés.');
-  });
+            e.preventDefault();
 
-  [blueBank, greenBank].forEach(bank => {
-    bank.addEventListener('dragover', e => e.preventDefault());
-    bank.addEventListener('drop', e => {
-      e.preventDefault();
-      if(!dragged) return;
-      returnTokenToStock(dragged);
-      dragged = null;
-    });
-  });
+            c.classList.add("over");
 
-  document.getElementById('reset').addEventListener('click', () => {
-    rebuildStock();
-    announce('La frise est vide et les vingt jetons sont revenus dans le stock.');
-  });
+        }
+    );
 
-  rebuildStock();
+
+    c.addEventListener(
+        "dragleave",
+        () => {
+
+            c.classList.remove("over");
+
+        }
+    );
+
+
+    c.addEventListener(
+        "drop",
+        e => {
+
+            e.preventDefault();
+
+            c.classList.remove("over");
+
+            if(dragged){
+
+                place(
+                    dragged,
+                    c
+                );
+
+            }
+
+        }
+    );
+
+
+    c.addEventListener(
+        "click",
+        () => {
+
+            if(selected){
+
+                place(
+                    selected,
+                    c
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================
+   CONSTRUCTION DE LA FRISE
+========================= */
+
+function buildBoard(){
+
+    board.innerHTML = "";
+
+
+    const lastStart =
+        Math.floor(max / 10) * 10;
+
+
+    for(
+        let start = 0;
+        start <= lastStart;
+        start += 10
+    ){
+
+        const row =
+            document.createElement("div");
+
+        row.className = "row";
+
+
+        /* NOMBRES */
+
+        for(
+            let i = 0;
+            i < 10;
+            i++
+        ){
+
+            const n =
+                start + i;
+
+
+            const h =
+                document.createElement("div");
+
+
+            h.className =
+                "number"
+                +
+                (
+                    i === 0
+                        ? " ten"
+                        : ""
+                );
+
+
+            if(n <= max){
+
+                h.textContent = n;
+
+                h.dataset.value =
+                    String(n);
+
+                h.title =
+                    "Double-cliquer pour remplir jusqu’à "
+                    + n;
+
+
+                h.addEventListener(
+                    "dblclick",
+                    function(e){
+
+                        e.preventDefault();
+
+                        e.stopPropagation();
+
+                        autoFill(
+                            Number(
+                                this.dataset.value
+                            )
+                        );
+
+                    }
+                );
+
+            }
+
+            else{
+
+                h.style.visibility =
+                    "hidden";
+
+            }
+
+
+            row.appendChild(h);
+
+        }
+
+
+        /* CASES POUR LES JETONS */
+
+        for(
+            let i = 0;
+            i < 10;
+            i++
+        ){
+
+            const n =
+                start + i;
+
+
+            const c =
+                document.createElement("div");
+
+
+            c.className =
+                "slot"
+                +
+                (
+                    i === 0
+                        ? " ten"
+                        : ""
+                )
+                +
+                (
+                    n === 0
+                        ? " zero"
+                        : ""
+                );
+
+
+            c.dataset.n = n;
+
+
+            if(n > max){
+
+                c.style.visibility =
+                    "hidden";
+
+            }
+
+            else if(n === 0){
+
+                c.innerHTML =
+                    '<span class="cross">×</span>';
+
+            }
+
+            else{
+
+                addSlotEvents(c);
+
+            }
+
+
+            row.appendChild(c);
+
+        }
+
+
+        board.appendChild(row);
+
+    }
+
+
+    const box =
+        document.createElement("div");
+
+    box.id =
+        "selectionBox";
+
+    board.appendChild(box);
+
+
+    clearMultiSelection();
+
+}
+
+
+/* =========================
+   REMPLISSAGE AUTOMATIQUE
+========================= */
+
+function autoFill(n){
+
+    if(
+        !Number.isFinite(n) ||
+        n < 0
+    ){
+        return;
+    }
+
+
+    n =
+        Math.min(
+            n,
+            max
+        );
+
+
+    buildBoard();
+
+    buildStock();
+
+
+    const targets =
+        [...board.querySelectorAll(".slot")]
+
+        .filter(
+            c => {
+
+                const value =
+                    Number(c.dataset.n);
+
+                return(
+                    value >= 1 &&
+                    value <= n
+                );
+
+            }
+        )
+
+        .sort(
+            (a,b) =>
+                Number(a.dataset.n)
+                -
+                Number(b.dataset.n)
+        );
+
+
+    const supply = [
+
+        ...blueBank.querySelectorAll(
+            ".token"
+        ),
+
+        ...greenBank.querySelectorAll(
+            ".token"
+        )
+
+    ];
+
+
+    targets.forEach(
+        (cell,i) => {
+
+            if(supply[i]){
+
+                cell.appendChild(
+                    supply[i]
+                );
+
+            }
+
+        }
+    );
+
+
+    clearMultiSelection();
+
+}
+
+
+/* =========================
+   SÉLECTION MULTIPLE
+========================= */
+
+function clearMultiSelection(){
+
+    multiSelected.forEach(
+        t => {
+
+            t.classList.remove(
+                "multi-selected"
+            );
+
+        }
+    );
+
+
+    multiSelected.clear();
+
+
+    removeSelected.disabled =
+        true;
+
+
+    selectionCount.textContent =
+        "Aucun jeton sélectionné";
+
+}
+
+
+function updateSelectionUI(){
+
+    const count =
+        multiSelected.size;
+
+
+    removeSelected.disabled =
+        count === 0;
+
+
+    if(count === 0){
+
+        selectionCount.textContent =
+            "Aucun jeton sélectionné";
+
+    }
+
+    else{
+
+        selectionCount.textContent =
+            count
+            +
+            " jeton"
+            +
+            (count > 1 ? "s" : "")
+            +
+            " sélectionné"
+            +
+            (count > 1 ? "s" : "");
+
+    }
+
+}
+
+
+function selectionRect(
+    current,
+    boardRect
+){
+
+    const left =
+        Math.min(
+            selStartX,
+            current.x
+        )
+        -
+        boardRect.left;
+
+
+    const top =
+        Math.min(
+            selStartY,
+            current.y
+        )
+        -
+        boardRect.top;
+
+
+    const right =
+        Math.max(
+            selStartX,
+            current.x
+        )
+        -
+        boardRect.left;
+
+
+    const bottom =
+        Math.max(
+            selStartY,
+            current.y
+        )
+        -
+        boardRect.top;
+
+
+    return {
+
+        left,
+
+        top,
+
+        width:
+            right - left,
+
+        height:
+            bottom - top
+
+    };
+
+}
+
+
+function hit(a,b){
+
+    return !(
+        a.right < b.left ||
+        a.left > b.right ||
+        a.bottom < b.top ||
+        a.top > b.bottom
+    );
+
+}
+
+
+/* DÉBUT DU RECTANGLE */
+
+board.addEventListener(
+    "mousedown",
+    e => {
+
+        if(e.button !== 0){
+
+            return;
+
+        }
+
+
+        if(
+            e.target.closest(".token")
+            ||
+            e.target.closest(".number")
+        ){
+
+            return;
+
+        }
+
+
+        const boardRect =
+            board.getBoundingClientRect();
+
+
+        selecting = true;
+
+        selected = null;
+
+        selStartX = e.clientX;
+
+        selStartY = e.clientY;
+
+
+        clearMultiSelection();
+
+
+        const box =
+            document.getElementById(
+                "selectionBox"
+            );
+
+
+        box.style.display =
+            "block";
+
+
+        box.style.left =
+            (
+                e.clientX
+                -
+                boardRect.left
+            )
+            +
+            "px";
+
+
+        box.style.top =
+            (
+                e.clientY
+                -
+                boardRect.top
+            )
+            +
+            "px";
+
+
+        box.style.width =
+            "0px";
+
+        box.style.height =
+            "0px";
+
+
+        e.preventDefault();
+
+    }
+);
+
+
+/* DÉPLACEMENT DU RECTANGLE */
+
+document.addEventListener(
+    "mousemove",
+    e => {
+
+        if(!selecting){
+
+            return;
+
+        }
+
+
+        const boardRect =
+            board.getBoundingClientRect();
+
+
+        const box =
+            document.getElementById(
+                "selectionBox"
+            );
+
+
+        if(!box){
+
+            return;
+
+        }
+
+
+        const r =
+            selectionRect(
+                {
+                    x: e.clientX,
+                    y: e.clientY
+                },
+                boardRect
+            );
+
+
+        box.style.left =
+            r.left + "px";
+
+        box.style.top =
+            r.top + "px";
+
+        box.style.width =
+            r.width + "px";
+
+        box.style.height =
+            r.height + "px";
+
+
+        const sel = {
+
+            left:
+                boardRect.left
+                +
+                r.left,
+
+            top:
+                boardRect.top
+                +
+                r.top,
+
+            right:
+                boardRect.left
+                +
+                r.left
+                +
+                r.width,
+
+            bottom:
+                boardRect.top
+                +
+                r.top
+                +
+                r.height
+
+        };
+
+
+        multiSelected.forEach(
+            t => {
+
+                t.classList.remove(
+                    "multi-selected"
+                );
+
+            }
+        );
+
+
+        multiSelected.clear();
+
+
+        board
+        .querySelectorAll(
+            ".slot .token"
+        )
+        .forEach(
+            t => {
+
+                if(
+                    hit(
+                        sel,
+                        t.getBoundingClientRect()
+                    )
+                ){
+
+                    multiSelected.add(t);
+
+                    t.classList.add(
+                        "multi-selected"
+                    );
+
+                }
+
+            }
+        );
+
+
+        updateSelectionUI();
+
+    }
+);
+
+
+/* FIN DU RECTANGLE */
+
+document.addEventListener(
+    "mouseup",
+    () => {
+
+        if(!selecting){
+
+            return;
+
+        }
+
+
+        selecting = false;
+
+
+        const box =
+            document.getElementById(
+                "selectionBox"
+            );
+
+
+        if(box){
+
+            box.style.display =
+                "none";
+
+        }
+
+    }
+);
+
+
+/* =========================
+   TRACE D'UN JETON RETIRÉ
+========================= */
+
+function leaveGhost(t){
+
+    if(!t){
+
+        return;
+
+    }
+
+
+    const c =
+        t.parentElement;
+
+
+    if(
+        !c ||
+        !c.classList.contains("slot") ||
+        c.dataset.n === "0"
+    ){
+
+        return;
+
+    }
+
+
+    c.querySelectorAll(".ghost")
+    .forEach(
+        g => g.remove()
+    );
+
+
+    const g =
+        document.createElement("div");
+
+
+    g.className =
+        "ghost "
+        +
+        t.dataset.color;
+
+
+    g.setAttribute(
+        "aria-label",
+        "Trace du jeton retiré"
+    );
+
+
+    c.appendChild(g);
+
+}
+
+
+/* =========================
+   RETRAIT MULTIPLE
+========================= */
+
+removeSelected.addEventListener(
+    "click",
+    () => {
+
+        [...multiSelected]
+        .forEach(
+            t => {
+
+                leaveGhost(t);
+
+                t.classList.remove(
+                    "multi-selected"
+                );
+
+                t.style.outline =
+                    "";
+
+                bag.appendChild(t);
+
+            }
+        );
+
+
+        clearMultiSelection();
+
+    }
+);
+
+
+/* =========================
+   SAC
+========================= */
+
+bag.addEventListener(
+    "dragover",
+    e => {
+
+        e.preventDefault();
+
+        bag.classList.add("over");
+
+    }
+);
+
+
+bag.addEventListener(
+    "dragleave",
+    () => {
+
+        bag.classList.remove("over");
+
+    }
+);
+
+
+bag.addEventListener(
+    "drop",
+    e => {
+
+        e.preventDefault();
+
+        bag.classList.remove("over");
+
+
+        if(!dragged){
+
+            return;
+
+        }
+
+
+        leaveGhost(dragged);
+
+
+        dragged.style.outline =
+            "";
+
+
+        bag.appendChild(
+            dragged
+        );
+
+
+        dragged = null;
+
+        selected = null;
+
+    }
+);
+
+
+bag.addEventListener(
+    "click",
+    () => {
+
+        if(!selected){
+
+            return;
+
+        }
+
+
+        leaveGhost(selected);
+
+
+        selected.style.outline =
+            "";
+
+
+        bag.appendChild(
+            selected
+        );
+
+
+        selected = null;
+
+    }
+);
+
+
+/* =========================
+   RETOUR VERS LES RÉSERVES
+========================= */
+
+[
+    blueBank,
+    greenBank
+]
+.forEach(
+    bank => {
+
+        bank.addEventListener(
+            "dragover",
+            e => {
+
+                e.preventDefault();
+
+            }
+        );
+
+
+        bank.addEventListener(
+            "drop",
+            e => {
+
+                e.preventDefault();
+
+
+                if(!dragged){
+
+                    return;
+
+                }
+
+
+                returnStock(
+                    dragged
+                );
+
+
+                dragged = null;
+
+                selected = null;
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================
+   CHANGEMENT DE DIMENSION
+========================= */
+
+range.addEventListener(
+    "change",
+    () => {
+
+        max =
+            Number(
+                range.value
+            );
+
+
+        buildBoard();
+
+        buildStock();
+
+    }
+);
+
+
+/* =========================
+   TOUT REMETTRE
+========================= */
+
+document
+.getElementById("reset")
+.addEventListener(
+    "click",
+    () => {
+
+        buildBoard();
+
+        buildStock();
+
+    }
+);
+
+
+/* =========================
+   INITIALISATION
+========================= */
+
+buildBoard();
+
+buildStock();
+
+
 })();
+
 </script>
+
 </body>
 </html>
