@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fractions CE1 – partager par pliages</title>
+<title>Fractions CE1 – parts égales</title>
 <style>
 :root{--ink:#263548;--muted:#607286;--line:#dce5ed;--blue:#2878bd;--blue-light:#e8f3fb;--paper:#fffdf8;--bg:#f2f6f8;--gold:#f3c969;--coral:#f58f77;--green:#70bb91}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Arial,sans-serif}
@@ -15,23 +15,22 @@ h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}
 .board{min-height:430px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:1px solid #eee6d8;border-radius:14px;padding:16px;position:relative}
 svg{width:min(100%,480px);height:auto;max-height:430px;overflow:visible;touch-action:manipulation}
 .piece{stroke:#34485d;stroke-width:2;cursor:pointer;transition:fill .15s,opacity .15s}.piece:hover{filter:brightness(.96)}
-.crease{stroke:#e3644c;stroke-width:2.2;stroke-dasharray:7 5;pointer-events:none}.outline{fill:none;stroke:#34485d;stroke-width:3;pointer-events:none}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button,.choices button,.fold-controls button{font:inherit;border:1px solid var(--line);background:white;border-radius:10px;padding:9px 12px;color:var(--ink);cursor:pointer}
+.outline{fill:none;stroke:#34485d;stroke-width:3;pointer-events:none}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button,.choices button{font:inherit;border:1px solid var(--line);background:white;border-radius:10px;padding:9px 12px;color:var(--ink);cursor:pointer}
 button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);border-color:var(--blue);color:#145789;font-weight:700}
 .primary{background:var(--blue)!important;border-color:var(--blue)!important;color:white!important;font-weight:700}.primary:hover{background:#1d659f!important}
 .section{margin-bottom:18px}.choices{display:flex;gap:8px;flex-wrap:wrap}.choices button{min-width:54px;font-weight:700}
-.fold-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fold-controls button{padding:8px 11px}.fold-status{margin:8px 0 0;color:#38536a;font-size:14px;min-height:38px}
 .readout{margin-top:14px;background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:66px;text-align:center}
 .count{font-size:20px;font-weight:700}.fraction{font-size:27px;font-weight:700;color:#155e92;margin:2px 0}.small{font-size:13px;color:var(--muted)}
-.hint{margin:10px 2px 0;font-size:13px;color:var(--muted)}.checkline{display:flex;align-items:center;gap:8px;margin-top:12px}.checkline input{width:18px;height:18px}
-.footer{font-size:12px;color:var(--muted);margin-top:12px}.mobile-only{display:none}
+.hint{margin:10px 2px 0;font-size:13px;color:var(--muted)}
+.footer{font-size:12px;color:var(--muted);margin-top:12px}
 @media(max-width:800px){main{grid-template-columns:1fr}.board{min-height:340px}header{align-items:flex-start}}
-@media print{body{background:white}header{border:0;padding:8px 0}main{display:grid;grid-template-columns:1.2fr .8fr;margin:8px auto}.card{box-shadow:none;break-inside:avoid}.toolbar button,.choices button,.fold-controls button{padding:5px 8px}}
+@media print{body{background:white}header{border:0;padding:8px 0}main{display:grid;grid-template-columns:1.2fr .8fr;margin:8px auto}.card{box-shadow:none;break-inside:avoid}.toolbar button,.choices button{padding:5px 8px}}
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Partager en parts égales</h1><p>Fractions CE1 · pliages et manipulation visuelle</p></div>
+  <div><h1>Partager en parts égales</h1><p>Fractions CE1 · manipulation visuelle</p></div>
   <div class="toolbar" aria-label="Choisir une forme">
     <button class="shape active" data-shape="disk">Disque</button>
     <button class="shape" data-shape="square">Carré</button>
@@ -44,7 +43,7 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
     <div class="board"><svg id="figure" viewBox="0 0 500 390" role="img" aria-label="Figure partagée en parts égales"></svg></div>
     <p class="hint">Clique sur une part pour la colorier ou l’effacer. Chaque part a la même aire.</p>
     <div class="readout" aria-live="polite">
-      <div class="count" id="countText">0 part coloriée sur 2 parts égales</div>
+      <div class="count" id="countText">La forme entière représente une unité.</div>
       <div class="fraction" id="fractionText" hidden></div>
       <div class="small" id="wordText">Aucune part coloriée</div>
     </div>
@@ -53,16 +52,11 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
     <div class="section"><h2>1. Choisir le partage</h2><div id="denoms" class="choices"></div>
       <div class="small" id="denomHint" style="margin-top:8px">La forme entière représente une unité. Choisis un partage pour faire apparaître les parts égales.</div>
     </div>
-    <div class="section"><h2>2. Observer les pliages</h2>
-      <div class="fold-controls"><button id="prevFold">← Déplier</button><strong id="foldCount">0 pli</strong><button id="nextFold" class="primary">Faire un pli →</button></div>
-      <p class="fold-status" id="foldStatus">Le disque entier représente une unité.</p>
-      <label class="checkline"><input type="checkbox" id="showFolds" checked><span>Afficher les lignes de pli</span></label>
-    </div>
-    <div class="section"><h2>3. Colorier pour montrer une fraction</h2>
+        <div class="section"><h2>2. Colorier pour montrer une fraction</h2>
       <div class="toolbar"><button id="onePart">Colorier une part</button><button id="clearParts">Tout effacer</button><button id="toggleFraction" disabled>Afficher la fraction</button></div>
       <p class="hint" style="margin-top:8px">La fraction s’écrit sous la forme « parts coloriées / nombre de parts égales ».</p>
     </div>
-    <div class="footer">Outil de vidéoprojection et de manipulation collective. Le nombre de parts est volontairement limité aux partages travaillés par pliage.</div>
+    <div class="footer">Outil de vidéoprojection et de manipulation collective. Les partages proposés correspondent aux manipulations travaillées en classe.</div>
   </aside>
 </main>
 <script>
@@ -71,15 +65,13 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
   const shapeTitle = document.getElementById('shapeTitle');
   const denoms = document.getElementById('denoms');
   const denomHint = document.getElementById('denomHint');
-  const foldStatus = document.getElementById('foldStatus');
-  const foldCount = document.getElementById('foldCount');
   const fractionText = document.getElementById('fractionText');
   const countText = document.getElementById('countText');
   const wordText = document.getElementById('wordText');
   const colorSet = ['#f3c969','#f58f77','#70bb91','#8ec8e8','#ba9be0','#f4a6c7','#9cc78f','#f1a65b'];
   const names = {disk:'Le disque unité',square:'Le carré unité',band:'La bande unité'};
   const available = {disk:[2,4,8],square:[2,4,8],band:[2,3,4,6]};
-  let shape='disk', n=1, folds=0, colored=new Set(), showFolds=true, fractionVisible=false;
+  let shape='disk', n=1, colored=new Set(), fractionVisible=false;
   const NS='http://www.w3.org/2000/svg';
   function el(tag,attrs={}){const x=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))x.setAttribute(k,v);return x}
   function addText(parent,x,y,t,size=16,weight='700'){const a=el('text',{x,y,'text-anchor':'middle','dominant-baseline':'middle','font-size':size,'font-weight':weight,fill:'#31485e'});a.textContent=t;parent.appendChild(a)}
@@ -94,7 +86,6 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
       path.addEventListener('click',()=>{colored.has(i)?colored.delete(i):colored.add(i);render()});svg.appendChild(path);
     }
     svg.appendChild(el('circle',{cx,cy,r,class:'outline'}));
-    if(showFolds){let angles=[];if(n===2&&folds>=1)angles=[Math.PI/2];if(n===4){if(folds>=1)angles.push(0);if(folds>=2)angles.push(Math.PI/2)}if(n===8){if(folds>=1)angles.push(0);if(folds>=2)angles.push(Math.PI/2);if(folds>=3)angles.push(Math.PI/4,3*Math.PI/4)}for(const a of angles)svg.appendChild(el('line',{x1:cx-r*Math.cos(a),y1:cy-r*Math.sin(a),x2:cx+r*Math.cos(a),y2:cy+r*Math.sin(a),class:'crease'}))}
     addText(svg,250,365,'1 disque entier',16,'600');
   }
   function renderSquare(){
@@ -104,7 +95,6 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
     else if(n===4){const pts=[[[x,y],[cx,y],[cx,cy],[x,cy]],[[cx,y],[x+s,y],[x+s,cy],[cx,cy]],[[x,cy],[cx,cy],[cx,y+s],[x,y+s]],[[cx,cy],[x+s,cy],[x+s,y+s],[cx,y+s]]];pts.forEach((p,i)=>polygon(p,i))}
     else {const corners=[[x,y],[x+s,y],[x+s,y+s],[x,y+s]];for(let i=0;i<4;i++){polygon([[cx,cy],corners[i],[(corners[i][0]+corners[(i+1)%4][0])/2,(corners[i][1]+corners[(i+1)%4][1])/2]],i*2);polygon([[cx,cy],[(corners[i][0]+corners[(i+1)%4][0])/2,(corners[i][1]+corners[(i+1)%4][1])/2],corners[(i+1)%4]],i*2+1)}}
     svg.appendChild(el('rect',{x,y,width:s,height:s,class:'outline'}));
-    if(showFolds){if(folds>=1)svg.appendChild(el('line',{x1:cx,y1:y,x2:cx,y2:y+s,class:'crease'}));if(n>2&&folds>=2)svg.appendChild(el('line',{x1:x,y1:cy,x2:x+s,y2:cy,class:'crease'}));if(n>4&&folds>=3){svg.appendChild(el('line',{x1:x,y1:y,x2:x+s,y2:y+s,class:'crease'}));svg.appendChild(el('line',{x1:x+s,y1:y,x2:x,y2:y+s,class:'crease'}))}}
     addText(svg,250,365,'1 carré entier',16,'600');
   }
   function renderBand(){
@@ -112,7 +102,6 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
     if(n===1){svg.appendChild(el('rect',{x,y,width:w,height:h,fill:'#fffdf8',stroke:'#34485d','stroke-width':3}));addText(svg,250,300,'1 bande entière',16,'600');return}
     for(let i=0;i<n;i++){const r=el('rect',{x:x+i*w/n,y,width:w/n,height:h,class:'piece',fill:colored.has(i)?colorSet[i%colorSet.length]:'#fffdf8','data-i':i});r.addEventListener('click',()=>{colored.has(i)?colored.delete(i):colored.add(i);render()});svg.appendChild(r)}
     svg.appendChild(el('rect',{x,y,width:w,height:h,class:'outline'}));
-    if(showFolds&&folds>0){for(let i=1;i<n;i++)svg.appendChild(el('line',{x1:x+i*w/n,y1:y,x2:x+i*w/n,y2:y+h,class:'crease'}))}
     addText(svg,250,300,'1 bande entière',16,'600');
   }
   function updateText(){
@@ -124,22 +113,14 @@ button:hover{border-color:#9ab8cf}button.active{background:var(--blue-light);bor
     fractionButton.disabled=n===1;
     fractionButton.textContent=fractionVisible?'Masquer la fraction':'Afficher la fraction';
     wordText.textContent=n===1?'Choisis un partage pour faire apparaître des parts égales.':k===0?'Aucune part coloriée':`${k} ${k===1?'part':'parts'} sur ${n}`;
-    if(n===1){denomHint.textContent='La forme entière représente une unité. Choisis un partage ou fais un pli pour la partager en deux.';foldStatus.textContent='La forme entière représente une unité. Clique sur « Faire un pli » pour la partager en deux.';foldCount.textContent='0 pli';document.getElementById('prevFold').disabled=true;document.getElementById('nextFold').disabled=false;return}
+    if(n===1){denomHint.textContent='La forme entière représente une unité. Choisis le nombre de parts égales.';document.getElementById('onePart').disabled=true;document.getElementById('clearParts').disabled=true;return}
+    document.getElementById('onePart').disabled=false;document.getElementById('clearParts').disabled=false;
     const byShape={disk:n===2?'Plie le disque en deux parts égales, puis déplie-le.':n===4?'Fais un premier pli, déplie, puis plie dans l’autre sens pour obtenir quatre parts égales.':'Plie en deux, puis encore en deux dans l’autre sens ; ajoute les plis diagonaux pour obtenir huit parts égales.',square:n===2?'Plie le carré en deux pour partager l’unité en deux parts égales.':n===4?'Plie en deux, déplie, puis plie dans l’autre sens : quatre parts égales apparaissent.':'Après les deux plis qui marquent les quarts, ajoute les plis diagonaux : huit parts égales apparaissent.',band:n===2?'Plie la bande en deux parts égales.':n===3?'Repère trois parts de même longueur sur la bande.':'Plie ou partage la bande pour obtenir des parts de même longueur.'};
     denomHint.textContent=byShape[shape];
-    const maxStep=shape==='disk'?Math.log2(n):shape==='square'?(n===2?1:n===4?2:3):1;
-    folds=Math.min(folds,maxStep);foldCount.textContent=`${folds} ${folds===1?'pli':'plis'}`;
-    document.getElementById('prevFold').disabled=folds===0;
-    document.getElementById('nextFold').disabled=folds>=maxStep;
-    const status={disk:n===2?'Le pli passe par le centre : les deux moitiés ont la même aire.':n===4?'Le second pli croise le premier : on obtient quatre quarts de même aire.':'Les plis passant par le centre partagent le disque en huit secteurs de même aire.',square:n===2?'Le pli passe par le milieu du carré : les deux moitiés ont la même aire.':n===4?'Le pli perpendiculaire au premier donne quatre parts de même aire.':'Les plis du milieu puis les deux diagonales donnent huit triangles de même aire.',band:n===3?'Les trois longueurs doivent être égales.':`La bande est partagée en ${n} segments de même longueur.`};
-    foldStatus.textContent=folds===0?'Clique sur « Faire un pli » pour marquer le partage en deux parts égales.':status[shape];
   }
   function render(){svg.replaceChildren();shapeTitle.textContent=names[shape];if(shape==='disk')renderDisk();else if(shape==='square')renderSquare();else renderBand();updateText()}
-  function buildDenoms(){denoms.replaceChildren();const unit=document.createElement('button');unit.textContent='Unité entière';unit.className=n===1?'active':'';unit.addEventListener('click',()=>{n=1;colored.clear();folds=0;fractionVisible=false;buildDenoms();render()});denoms.appendChild(unit);for(const d of available[shape]){const b=document.createElement('button');b.textContent=`${d} parts`;b.className=d===n?'active':'';b.setAttribute('aria-label',`${d} parts égales`);b.addEventListener('click',()=>{n=d;colored.clear();folds=0;fractionVisible=false;buildDenoms();render()});denoms.appendChild(b)}}
-  document.querySelectorAll('.shape').forEach(b=>b.addEventListener('click',()=>{shape=b.dataset.shape;document.querySelectorAll('.shape').forEach(x=>x.classList.toggle('active',x===b));n=1;colored.clear();folds=0;fractionVisible=false;buildDenoms();render()}));
-  document.getElementById('prevFold').addEventListener('click',()=>{if(n===2&&folds===1){n=1;folds=0;colored.clear();fractionVisible=false;buildDenoms()}else{folds=Math.max(0,folds-1)}render()});
-  document.getElementById('nextFold').addEventListener('click',()=>{if(n===1){n=2;folds=1;colored.clear();fractionVisible=false;buildDenoms();render();return}const max=shape==='disk'?Math.log2(n):shape==='square'?(n===2?1:n===4?2:3):1;folds=Math.min(max,folds+1);render()});
-  document.getElementById('showFolds').addEventListener('change',e=>{showFolds=e.target.checked;render()});
+  function buildDenoms(){denoms.replaceChildren();const unit=document.createElement('button');unit.textContent='Unité entière';unit.className=n===1?'active':'';unit.addEventListener('click',()=>{n=1;colored.clear();fractionVisible=false;buildDenoms();render()});denoms.appendChild(unit);for(const d of available[shape]){const b=document.createElement('button');b.textContent=`${d} parts`;b.className=d===n?'active':'';b.setAttribute('aria-label',`${d} parts égales`);b.addEventListener('click',()=>{n=d;colored.clear();fractionVisible=false;buildDenoms();render()});denoms.appendChild(b)}}
+  document.querySelectorAll('.shape').forEach(b=>b.addEventListener('click',()=>{shape=b.dataset.shape;document.querySelectorAll('.shape').forEach(x=>x.classList.toggle('active',x===b));n=1;colored.clear();fractionVisible=false;buildDenoms();render()}));
   document.getElementById('clearParts').addEventListener('click',()=>{colored.clear();render()});
   document.getElementById('onePart').addEventListener('click',()=>{colored.clear();colored.add(0);render()});
   document.getElementById('toggleFraction').addEventListener('click',()=>{fractionVisible=!fractionVisible;render()});
